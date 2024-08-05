@@ -1,95 +1,195 @@
-import { Link } from "expo-router";
-import React from "react";
-import { Text, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import { Atom, CircleFadingPlus } from "lucide-react-native";
+import React, { useEffect, useState } from "react";
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
-export default function Page() {
-  return (
-    <View className="flex flex-1">
-      <Header />
-      <Content />
-      <Footer />
-    </View>
-  );
-}
+export default function HomeScreen() {
+  const router = useRouter();
+  const [option, setOption] = React.useState("Today");
+  const [habits, setHabits] = useState([]);
 
-function Content() {
+  useEffect(() => {
+    fetchHabits();
+  }, [option]);
+
+  const fetchHabits = async () => {
+    const date = new Date();
+    const day = date.getDay();
+    const days = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+    try {
+      const res = await fetch(
+        `${process.env.EXPO_PUBLIC_URL_ENDPOINT}/habits/${days[day]}`
+      );
+      const data = await res.json();
+      setHabits(data);
+    } catch (error) {
+      console.error("Error fetching habits:", error);
+    }
+  };
+
+  const toggleHabitCompletion = async (habit) => {
+    // Optimistically update the UI
+    setHabits(
+      habits.map((h) =>
+        h._id === habit._id ? { ...h, isComplete: !h.isComplete } : h
+      )
+    );
+
+    try {
+      await fetch(`${process.env.EXPO_PUBLIC_URL_ENDPOINT}/habits/${habit._id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          isComplete: !habit.isComplete,
+        }),
+      });
+    } catch (error) {
+      console.error("Error updating habit:", error);
+      // Revert the optimistic update if the API call fails
+      setHabits(habits);
+    }
+  };
+
+  const deleteHabit = async (habitId) => {
+    // Optimistically update the UI
+    setHabits(habits.filter((h) => h._id !== habitId));
+
+    try {
+      await fetch(`${process.env.EXPO_PUBLIC_URL_ENDPOINT}/habits/${habitId}`, {
+        method: "DELETE",
+      });
+    } catch (error) {
+      console.error("Error deleting habit:", error);
+      // Revert the optimistic update if the API call fails
+      fetchHabits();
+    }
+  };
+
   return (
-    <View className="flex-1">
-      <View className="py-12 md:py-24 lg:py-32 xl:py-48">
-        <View className="px-4 md:px-6">
-          <View className="flex flex-col items-center gap-4 text-center">
+    <ScrollView style={styles.container}>
+      <View style={styles.header}>
+        <View style={styles.titleContainer}>
+          <Atom size={28} color={"black"} />
+          <Text style={styles.title}>Atomic Habits</Text>
+        </View>
+        <CircleFadingPlus
+          size={28}
+          color={"black"}
+          onPress={() => {
+            router.push("/create");
+          }}
+        />
+      </View>
+      <View style={styles.optionsContainer}>
+        {["Today", "Weekly", "Overall"].map((item) => (
+          <Pressable
+            key={item}
+            onPress={() => setOption(item)}
+            style={[
+              styles.optionButton,
+              option === item && styles.selectedOptionButton,
+            ]}
+          >
             <Text
-              role="heading"
-              className="text-3xl text-center native:text-5xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl"
+              style={[
+                styles.optionText,
+                option === item && styles.selectedOptionText,
+              ]}
             >
-              Welcome to Project ACME
+              {item}
             </Text>
-            <Text className="mx-auto max-w-[700px] text-lg text-center text-gray-500 md:text-xl dark:text-gray-400">
-              Discover and collaborate on amce. Explore our services now.
+          </Pressable>
+        ))}
+      </View>
+      <View className="px-1 min-h-screen">
+        {habits.map((habit) => (
+          <Pressable
+            key={habit._id}
+            className={`bg-gray-100 p-2 my-2 px-4 rounded-lg ${
+              habit.isComplete ? "bg-gray-900 text-white" : ""
+            }`}
+            onPress={() => toggleHabitCompletion(habit)}
+            onLongPress={() =>
+              Alert.alert(
+                "Delete Habit",
+                "Are you sure you want to delete this habit?",
+                [
+                  {
+                    text: "Cancel",
+                    style: "cancel",
+                  },
+                  {
+                    text: "OK",
+                    onPress: () => deleteHabit(habit._id),
+                  },
+                ]
+              )
+            }
+          >
+            <Text
+              className={`p-2 px-4 ${habit.isComplete ? "text-white" : ""}`}
+            >
+              {habit.title}
             </Text>
-
-            <View className="gap-4">
-              <Link
-                suppressHighlighting
-                className="flex h-9 items-center justify-center overflow-hidden rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-gray-50 web:shadow ios:shadow transition-colors hover:bg-gray-900/90 active:bg-gray-400/90 web:focus-visible:outline-none web:focus-visible:ring-1 focus-visible:ring-gray-950 disabled:pointer-events-none disabled:opacity-50 dark:bg-gray-50 dark:text-gray-900 dark:hover:bg-gray-50/90 dark:focus-visible:ring-gray-300"
-                href="/"
-              >
-                Explore
-              </Link>
-            </View>
-          </View>
-        </View>
+          </Pressable>
+        ))}
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
-function Header() {
-  const { top } = useSafeAreaInsets();
-  return (
-    <View style={{ paddingTop: top }}>
-      <View className="px-4 lg:px-6 h-14 flex items-center flex-row justify-between ">
-        <Link className="font-bold flex-1 items-center justify-center" href="/">
-          ACME
-        </Link>
-        <View className="flex flex-row gap-4 sm:gap-6">
-          <Link
-            className="text-md font-medium hover:underline web:underline-offset-4"
-            href="/"
-          >
-            About
-          </Link>
-          <Link
-            className="text-md font-medium hover:underline web:underline-offset-4"
-            href="/"
-          >
-            Product
-          </Link>
-          <Link
-            className="text-md font-medium hover:underline web:underline-offset-4"
-            href="/"
-          >
-            Pricing
-          </Link>
-        </View>
-      </View>
-    </View>
-  );
-}
-
-function Footer() {
-  const { bottom } = useSafeAreaInsets();
-  return (
-    <View
-      className="flex shrink-0 bg-gray-100 native:hidden"
-      style={{ paddingBottom: bottom }}
-    >
-      <View className="py-6 flex-1 items-start px-4 md:px-6 ">
-        <Text className={"text-center text-gray-700"}>
-          © {new Date().getFullYear()} Me
-        </Text>
-      </View>
-    </View>
-  );
-}
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "white",
+    paddingTop: 50,
+    paddingHorizontal: 15,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingBottom: 14,
+  },
+  titleContainer: {
+    flex: 1,
+    flexDirection: "row",
+    alignSelf: "baseline",
+  },
+  title: {
+    fontSize: 23,
+    paddingLeft: 4,
+  },
+  optionsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingBottom: 10,
+    marginTop: 10,
+  },
+  optionButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 25,
+  },
+  selectedOptionButton: {
+    backgroundColor: "#E0FFFF",
+  },
+  optionText: {
+    textAlign: "center",
+    color: "gray",
+    fontSize: 14,
+  },
+  selectedOptionText: {
+    color: "black",
+  },
+});

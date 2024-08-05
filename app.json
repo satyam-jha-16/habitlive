@@ -16,6 +16,17 @@
       ]
     ],
     "name": "habit",
-    "slug": "habit"
+    "slug": "habit",
+    "extra": {
+      "router": {
+        "origin": "https://n"
+      },
+      "eas": {
+        "projectId": "80421f8e-5720-4449-a470-b84fd6c06314"
+      }
+    },
+    "android": {
+      "package": "com.alexinwano.habit"
+    }
   }
 }

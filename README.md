@@ -15,10 +15,19 @@ A powerful and intuitive habit tracking application built with React Native and 
 
 ## Screenshots
 
-<div style="display: flex; justify-content: space-between;">
-  <img src="assets/home-screen.png" alt="Home Screen" width="30%">
-  <img src="assets/add-habit.png" alt="Add Habit Screen" width="30%">
-  <img src="assets/habit-details.png" alt="Habit Details Screen" width="30%">
+<div align="center">
+  <table>
+    <tr>
+      <td><img src="assets/homepage.jpeg" width="200"/></td>
+      <td><img src="assets/create.jpeg" width="200"/></td>
+      <td><img src="assets/create2.jpeg" width="200"/></td>
+    </tr>
+    <tr>
+      <td><img src="assets/homeselect.jpeg" width="200"/></td>
+      <td><img src="assets/homecomplete.jpeg" width="200"/></td>
+      <td><img src="assets/homedelete.jpeg" width="200"/></td>
+    </tr>
+  </table>
 </div>
 
 ## Getting Started
